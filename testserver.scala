@@ -8,8 +8,8 @@ import scala.concurrent.Future
 
 object testserver extends Server {
 	def router = {
-		case GET at p"/foo/bar/$x/lofasz" => Future.successful(HttpResponse(entity = x))
-		case GET at p"/" => Future.successful(HttpResponse(entity = "index"))
-		case GET at p"/error" => Future.failed(new Exception("intentional error"))
+		case GET at p"/foo/bar/$x/lofasz" => HttpResponse(entity = x)
+		case GET at p"/" => HttpResponse(entity = "index")
+		case GET at p"/error" => throw new Exception("intentional error")
 	}
 }

@@ -34,10 +34,12 @@ trait Server {
 		implicit val askTimeout: Timeout = 500.millis
 		val binding = IO(Http) ? Http.Bind(interface = interface, port = port)
 		binding.onSuccess {
-			case Http.ServerBinding(_, connectionStream) => connectionHandler(connectionStream)
+			case Http.ServerBinding(_, connectionStream) =>
+				connectionHandler(connectionStream)
 		}
 		binding.onFailure {
-			case e: AskTimeoutException => println(s"An error occured while starting server at $interface:$port: ${e.getMessage}")
+			case e: AskTimeoutException =>
+				println(s"An error occured while starting server at $interface:$port: ${e.getMessage}")
 		}
 	}
 
@@ -52,19 +54,23 @@ trait Server {
 	private def connectionHandler(connectionStream: Publisher[Http.IncomingConnection]) =
 		Flow(connectionStream).foreach {
 			case Http.IncomingConnection(remoteAddress, requestProducer, responseConsumer) =>
-				Flow(requestProducer).mapFuture(requestHandler).produceTo(responseConsumer)
+				Flow(requestProducer).map(handler).produceTo(responseConsumer)
 		}
 
-	private val requestHandler = router orElse notFoundRouter andThen (_.recoverWith(errorHandler))
+	private val handler = (req: HttpRequest) =>
+		try { requestHandler(req) }
+		catch errorHandler
 
-	protected def notFoundRouter: PartialFunction[HttpRequest, Future[HttpResponse]] = {
-		case _ => Future.successful(HttpResponse(404))
+	private val requestHandler = router orElse notFoundRouter
+
+	protected def notFoundRouter: PartialFunction[HttpRequest, HttpResponse] = {
+		case _ => HttpResponse(404)
 	}
 
-	protected def errorHandler: PartialFunction[Throwable, Future[HttpResponse]] = {
-		case e: Throwable => Future.successful(HttpResponse(500))
+	protected def errorHandler: PartialFunction[Throwable, HttpResponse] = {
+		case e: Throwable => HttpResponse(500)
 	}
 
-	def router: PartialFunction[HttpRequest, Future[HttpResponse]]
+	def router: PartialFunction[HttpRequest, HttpResponse]
 
 }
