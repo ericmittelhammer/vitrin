@@ -23,8 +23,8 @@ import scala.concurrent.duration._
 
 trait Server {
 
-	implicit val system = ActorSystem()
-	implicit val materializer = FlowMaterializer()
+	private implicit val system = ActorSystem()
+	private implicit val materializer = FlowMaterializer()
 
 	import system.dispatcher
 
@@ -55,9 +55,7 @@ trait Server {
 				Flow(requestProducer).mapFuture(requestHandler).produceTo(responseConsumer)
 		}
 
-	private def requestHandler: HttpRequest => Future[HttpResponse] = router orElse notFoundRouter andThen (_.recoverWith(errorHandler))
-
-	def router: PartialFunction[HttpRequest, Future[HttpResponse]]
+	private val requestHandler = router orElse notFoundRouter andThen (_.recoverWith(errorHandler))
 
 	protected def notFoundRouter: PartialFunction[HttpRequest, Future[HttpResponse]] = {
 		case _ => Future.successful(HttpResponse(404))
@@ -66,5 +64,7 @@ trait Server {
 	protected def errorHandler: PartialFunction[Throwable, Future[HttpResponse]] = {
 		case e: Throwable => Future.successful(HttpResponse(500))
 	}
+
+	def router: PartialFunction[HttpRequest, Future[HttpResponse]]
 
 }
