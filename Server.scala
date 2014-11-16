@@ -57,11 +57,11 @@ trait Server {
 				Flow(requestProducer).map(handler).produceTo(responseConsumer)
 		}
 
-	private val handler = (req: HttpRequest) =>
+	private def handler = (req: HttpRequest) =>
 		try { requestHandler(req) }
 		catch errorHandler
 
-	private val requestHandler = router orElse notFoundRouter
+	private def requestHandler = router orElse notFoundRouter
 
 	protected def notFoundRouter: PartialFunction[HttpRequest, HttpResponse] = {
 		case _ => HttpResponse(404)
