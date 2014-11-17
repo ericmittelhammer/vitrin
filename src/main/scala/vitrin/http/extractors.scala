@@ -1,4 +1,4 @@
-package vitrin
+package vitrin.http
 
 import akka.http.model._
 import HttpMethods._

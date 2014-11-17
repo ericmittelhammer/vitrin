@@ -1,6 +1,7 @@
-package vitrin
+package vitrin.http
 
 import extractors._
+import vitrin.logging.Logging
 
 import akka.pattern.ask
 import akka.actor.ActorSystem
@@ -21,7 +22,7 @@ import org.reactivestreams.Publisher
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-trait Server {
+trait Server extends Logging {
 
 	private implicit val system = ActorSystem()
 	private implicit val materializer = FlowMaterializer()
@@ -61,7 +62,7 @@ trait Server {
 		try { requestHandler(req) }
 		catch errorHandler
 
-	private def requestHandler = router orElse notFoundRouter
+	private def requestHandler = router andThen runLogging orElse notFoundRouter
 
 	protected def notFoundRouter: PartialFunction[HttpRequest, HttpResponse] = {
 		case _ => HttpResponse(404)
@@ -71,6 +72,6 @@ trait Server {
 		case e: Throwable => HttpResponse(500)
 	}
 
-	def router: PartialFunction[HttpRequest, HttpResponse]
+	def router: PartialFunction[HttpRequest, Logger[HttpResponse]]
 
 }
