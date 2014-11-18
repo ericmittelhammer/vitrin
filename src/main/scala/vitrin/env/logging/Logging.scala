@@ -1,7 +1,6 @@
-package vitrin.logging
+package vitrin.env.logging
 
 import scalaz._
-import Scalaz._
 
 trait Logging {
 
@@ -12,18 +11,17 @@ trait Logging {
 	case class Warning(msg: String) extends LogEntry
 	case class Error(msg: String) extends LogEntry
 
-	type Logger[+A] = Writer[List[LogEntry], A]
-
-	def trace(msg: String) = List(Trace(msg)).tell
-	def debug(msg: String) = List(Debug(msg)).tell
-	def info(msg: String) = List(Info(msg)).tell
-	def warn(msg: String) = List(Warning(msg)).tell
-	def err(msg: String) = List(Error(msg)).tell
+	type Log = List[LogEntry]
+	object Log {
+		def apply(entry: LogEntry) = List(entry)
+	}
+	implicit object LogMonoid extends Monoid[Log] {
+		def zero = List.empty[LogEntry]
+		def append(f1: Log, f2: => Log) = f1 ::: f2
+	}
 
 	val loggerRuntime: LoggerRuntime
-
-	def runLogging[A](logger: Logger[A]): A = {
-		val (log, value) = logger.run
+	def runLog(log: Log): Unit =
 		log.foreach {
 			case Trace(msg) => loggerRuntime.trace(msg)
 			case Debug(msg) => loggerRuntime.debug(msg)
@@ -31,7 +29,5 @@ trait Logging {
 			case Warning(msg) => loggerRuntime.warn(msg)
 			case Error(msg) => loggerRuntime.error(msg)
 		}
-		value
-	}
 
 }

@@ -1,7 +1,7 @@
 package vitrin.http
 
 import extractors._
-import vitrin.logging.Logging
+import vitrin.env.Environment
 
 import akka.pattern.ask
 import akka.actor.ActorSystem
@@ -22,7 +22,7 @@ import org.reactivestreams.Publisher
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-trait Server extends Logging {
+trait Server extends Environment {
 
 	private implicit val system = ActorSystem()
 	private implicit val materializer = FlowMaterializer()
@@ -37,6 +37,7 @@ trait Server extends Logging {
 		binding.onSuccess {
 			case Http.ServerBinding(_, connectionStream) =>
 				connectionHandler(connectionStream)
+				println(s"Starting server at $interface:$port")
 		}
 		binding.onFailure {
 			case e: AskTimeoutException =>
@@ -62,7 +63,7 @@ trait Server extends Logging {
 		try { requestHandler(req) }
 		catch errorHandler
 
-	private def requestHandler = router andThen runLogging orElse notFoundRouter
+	private def requestHandler = router andThen run orElse notFoundRouter
 
 	protected def notFoundRouter: PartialFunction[HttpRequest, HttpResponse] = {
 		case _ => HttpResponse(404)
@@ -72,6 +73,6 @@ trait Server extends Logging {
 		case e: Throwable => HttpResponse(500)
 	}
 
-	def router: PartialFunction[HttpRequest, Logger[HttpResponse]]
+	def router: PartialFunction[HttpRequest, Env[HttpResponse]]
 
 }

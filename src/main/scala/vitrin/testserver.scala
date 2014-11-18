@@ -2,7 +2,8 @@ package vitrin
 
 import http.Server
 import http.extractors._
-import logging.Slf4jLoggerRuntime
+import env.logging.Slf4jLoggerRuntime
+import env.config.TypesafeConfigRuntime
 
 import akka.http.model._
 import HttpMethods._
@@ -12,6 +13,7 @@ import scala.concurrent.Future
 object testserver extends Server {
 
 	val loggerRuntime = new Slf4jLoggerRuntime(this.getClass().getName())
+	val configRuntime = new TypesafeConfigRuntime
 
 	def router = {
 		case GET at p"/foo/bar/$x/lofasz" => foobar(x)
@@ -20,7 +22,9 @@ object testserver extends Server {
 	}
 
 	def foobar(x: String) = for {
-		_ <- info(s"foobaring with $x")
+		prefix <- getConfig("foo.bar")
+		msg = prefix.getOrElse("I don't know what's happening but")
+		_ <- info(s"$msg $x")
 	} yield HttpResponse(entity = x)
 
 	def index = for {
