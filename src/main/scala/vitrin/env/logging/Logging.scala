@@ -1,6 +1,6 @@
 package vitrin.env.logging
 
-import scalaz._
+import vitrin.Monoid
 
 trait Logging {
 
@@ -12,15 +12,18 @@ trait Logging {
 	case class Error(msg: String) extends LogEntry
 
 	type Log = List[LogEntry]
+
 	object Log {
 		def apply(entry: LogEntry) = List(entry)
 	}
+
 	implicit object LogMonoid extends Monoid[Log] {
 		def zero = List.empty[LogEntry]
 		def append(f1: Log, f2: => Log) = f1 ::: f2
 	}
 
 	val logRuntime: LogRuntime
+
 	def runLog(log: Log): Unit =
 		log.foreach {
 			case Trace(msg) => logRuntime.trace(msg)

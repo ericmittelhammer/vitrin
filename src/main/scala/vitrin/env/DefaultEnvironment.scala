@@ -3,7 +3,11 @@ package vitrin.env
 import logging.Logging
 import config.ConfigRuntime
 
-import scalaz._
+import vitrin.ReadWrite
+import vitrin.Monoid
+
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 
 trait DefaultEnvironment extends Environment with Logging {
 
@@ -12,24 +16,25 @@ trait DefaultEnvironment extends Environment with Logging {
 	}
 	val context: Context
 
-	type Env[+A] = ReaderWriterState[Context, Log, Unit, A]
+	type Env[+A] = ReadWrite[Context, Log, A]
 
-	def trace[A](msg: String): Env[Unit] = ReaderWriterState { (ctx, state) => (Log(Trace(msg)), (), state) }
-	def debug[A](msg: String): Env[Unit] = ReaderWriterState { (ctx, state) => (Log(Debug(msg)), (), state) }
-	def info[A](msg: String): Env[Unit] = ReaderWriterState { (ctx, state) => (Log(Info(msg)), (), state) }
-	def warn[A](msg: String): Env[Unit] = ReaderWriterState { (ctx, state) => (Log(Warning(msg)), (), state) }
-	def err[A](msg: String): Env[Unit] = ReaderWriterState { (ctx, state) => (Log(Error(msg)), (), state) }
-
-	def withContext[A](f: Context => A)(implicit lm: Monoid[Log]): Env[A] = ReaderWriterState {
-		(context, state) => (lm.zero, f(context), state)
+	def run[A](env: Env[A])(implicit ec: ExecutionContext): Future[A] = {
+		val result = env.run(context)
+		result onSuccess {
+			case (log, _) => runLog(log)
+		}
+		result.map {
+			case (_, value) => value
+		}
 	}
 
-	def run[A](env: Env[A]): A = {
-		val (log, value, _) = env.run(context, ())
-		runLog(log)
-		value
-	}
+	def trace[A](msg: String)(implicit lm: Monoid[Log]): Env[Unit] = ReadWrite.write(Log(Trace(msg)))
+	def debug[A](msg: String)(implicit lm: Monoid[Log]): Env[Unit] = ReadWrite.write(Log(Debug(msg)))
+	def info[A](msg: String)(implicit lm: Monoid[Log]): Env[Unit] = ReadWrite.write(Log(Info(msg)))
+	def warn[A](msg: String)(implicit lm: Monoid[Log]): Env[Unit] = ReadWrite.write(Log(Warning(msg)))
+	def err[A](msg: String)(implicit lm: Monoid[Log]): Env[Unit] = ReadWrite.write(Log(Error(msg)))
 
-	def getConfig(path: String)(implicit lm: Monoid[Log]): Env[Option[String]] = withContext(_.config.get(path))
+	def getConfig(path: String)(implicit lm: Monoid[Log], ec: ExecutionContext): Env[Option[String]] =
+		ReadWrite.read { ctx => Future.successful(ctx.config.get(path)) }
 
 }

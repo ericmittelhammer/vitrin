@@ -13,6 +13,8 @@ import scala.concurrent.Future
 
 object testserver extends Server with DefaultEnvironment {
 
+	import system.dispatcher
+
 	val context = new Context {
 		val config = new TypesafeConfigRuntime
 	}
