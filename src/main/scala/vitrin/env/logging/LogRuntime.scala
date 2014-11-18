@@ -1,6 +1,6 @@
 package vitrin.env.logging
 
-trait LoggerRuntime {
+trait LogRuntime {
 	def trace(msg: String): Unit
 	def debug(msg: String): Unit
 	def info(msg: String): Unit

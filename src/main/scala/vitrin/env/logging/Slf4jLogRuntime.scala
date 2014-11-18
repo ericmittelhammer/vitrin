@@ -3,7 +3,7 @@ package vitrin.env.logging
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class Slf4jLoggerRuntime(name: String) extends LoggerRuntime {
+class Slf4jLogRuntime(name: String) extends LogRuntime {
 	private val logger = LoggerFactory.getLogger(name)
 
 	def trace(msg: String) = logger.trace(msg)

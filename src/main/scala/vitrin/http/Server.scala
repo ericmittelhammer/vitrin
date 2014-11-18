@@ -22,7 +22,8 @@ import org.reactivestreams.Publisher
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-trait Server extends Environment {
+trait Server {
+	self: Environment =>
 
 	private implicit val system = ActorSystem()
 	private implicit val materializer = FlowMaterializer()
