@@ -1,4 +1,4 @@
-package vitrin.env.logging
+package vitrin.runtime.logging
 
 trait LogRuntime {
 	def trace(msg: String): Unit

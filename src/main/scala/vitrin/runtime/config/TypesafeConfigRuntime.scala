@@ -1,4 +1,4 @@
-package vitrin.env.config
+package vitrin.runtime.config
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigException

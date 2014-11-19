@@ -1,4 +1,4 @@
-package vitrin.env.logging
+package vitrin.runtime.logging
 
 import vitrin.Monoid
 

@@ -2,20 +2,23 @@ package vitrin
 
 import http.Server
 import http.extractors._
-import env.logging.Slf4jLogRuntime
-import env.config.TypesafeConfigRuntime
-import env.DefaultEnvironment
+import runtime.logging.Logging
+import runtime.logging.Slf4jLogRuntime
+import runtime.Environment
+import runtime.DefaultRuntime
+import runtime.DefaultContext
+import runtime.config.TypesafeConfigRuntime
 
 import akka.http.model._
 import HttpMethods._
 
 import scala.concurrent.Future
 
-object testserver extends Server with DefaultEnvironment {
+object testserver extends Server with DefaultRuntime with Logging with Environment {
 
 	import system.dispatcher
 
-	val context = new Context {
+	val context = new DefaultContext {
 		val config = new TypesafeConfigRuntime
 	}
 

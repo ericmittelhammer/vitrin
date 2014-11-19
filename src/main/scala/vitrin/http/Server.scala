@@ -1,7 +1,7 @@
 package vitrin.http
 
 import extractors._
-import vitrin.env.Environment
+import vitrin.runtime.Runtime
 import vitrin.Result
 import vitrin.Success
 import vitrin.Failure
@@ -26,7 +26,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 trait Server {
-	self: Environment =>
+	self: Runtime =>
 
 	protected implicit val system = ActorSystem("vitrin-server", com.typesafe.config.ConfigFactory.parseString("akka.loglevel=\"OFF\""))
 
@@ -66,8 +66,8 @@ trait Server {
 
 	private def requestHandler = router andThen run andThen (_ flatMap resultHandler) orElse notFoundRouter andThen (_ recoverWith exceptionHandler)
 
-	private def successHandler: PartialFunction[Result[_], Future[HttpResponse]] = {
-		case Success(value: HttpResponse) => Future.successful(value)
+	private def successHandler: PartialFunction[Result[HttpResponse], Future[HttpResponse]] = {
+		case Success(value) => Future.successful(value)
 	}
 
 	private def resultHandler = successHandler orElse errorHandler
@@ -80,10 +80,10 @@ trait Server {
 		case e: Throwable => Future.successful(HttpResponse(500))
 	}
 
-	def errorHandler: PartialFunction[Result[_], Future[HttpResponse]] = {
+	def errorHandler: PartialFunction[Result[HttpResponse], Future[HttpResponse]] = {
 		case Failure(error) => Future.successful(HttpResponse(500))
 	}
 
-	def router: PartialFunction[HttpRequest, Env[HttpResponse]]
+	def router: PartialFunction[HttpRequest, Render[HttpResponse]]
 
 }

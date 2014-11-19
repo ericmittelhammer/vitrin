@@ -1,4 +1,4 @@
-package vitrin.env.logging
+package vitrin.runtime.logging
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
