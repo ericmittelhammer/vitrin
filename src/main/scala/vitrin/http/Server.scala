@@ -2,6 +2,9 @@ package vitrin.http
 
 import extractors._
 import vitrin.env.Environment
+import vitrin.Result
+import vitrin.Success
+import vitrin.Failure
 
 import akka.pattern.ask
 import akka.actor.ActorSystem
@@ -61,14 +64,24 @@ trait Server {
 				Flow(requestProducer).mapFuture(requestHandler).produceTo(responseConsumer)
 		}
 
-	private def requestHandler = router andThen run andThen (_ recoverWith errorHandler)
+	private def requestHandler = router andThen run andThen (_ flatMap resultHandler) orElse notFoundRouter andThen (_ recoverWith exceptionHandler)
+
+	private def successHandler: PartialFunction[Result[_], Future[HttpResponse]] = {
+		case Success(value: HttpResponse) => Future.successful(value)
+	}
+
+	private def resultHandler = successHandler orElse errorHandler
 
 	protected def notFoundRouter: PartialFunction[HttpRequest, Future[HttpResponse]] = {
 		case _ => Future.successful(HttpResponse(404))
 	}
 
-	protected def errorHandler: PartialFunction[Throwable, Future[HttpResponse]] = {
+	private def exceptionHandler: PartialFunction[Throwable, Future[HttpResponse]] = {
 		case e: Throwable => Future.successful(HttpResponse(500))
+	}
+
+	def errorHandler: PartialFunction[Result[_], Future[HttpResponse]] = {
+		case Failure(error) => Future.successful(HttpResponse(500))
 	}
 
 	def router: PartialFunction[HttpRequest, Env[HttpResponse]]

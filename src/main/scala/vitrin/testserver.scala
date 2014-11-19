@@ -24,11 +24,11 @@ object testserver extends Server with DefaultEnvironment {
 	def router = {
 		case GET at p"/foo/bar/$x/lofasz" => foobar(x)
 		case GET at p"/" => index
-		case GET at p"/error" => error
+		case GET at p"/failure" => failure
 	}
 
 	def foobar(x: String) = for {
-		prefix <- getConfig("foo.bar")
+		prefix <- config("foo.bar")
 		msg = prefix.getOrElse("I don't know what's happening but")
 		_ <- info(s"$msg $x")
 	} yield HttpResponse(entity = s"$msg $x")
@@ -37,8 +37,9 @@ object testserver extends Server with DefaultEnvironment {
 		_ <- info("index page accessed")
 	} yield HttpResponse(entity = "index")
 
-	def error = for {
+	def failure = for {
 		_ <- err("intentional error occured big time")
-	} yield throw new Exception("intentional error")
+		_ <- error("intentional error")
+	} yield HttpResponse()
 
 }

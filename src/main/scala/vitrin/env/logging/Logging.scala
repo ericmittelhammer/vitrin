@@ -8,8 +8,8 @@ trait Logging {
 	case class Trace(msg: String) extends LogEntry
 	case class Debug(msg: String) extends LogEntry
 	case class Info(msg: String) extends LogEntry
-	case class Warning(msg: String) extends LogEntry
-	case class Error(msg: String) extends LogEntry
+	case class Warn(msg: String) extends LogEntry
+	case class Err(msg: String) extends LogEntry
 
 	type Log = List[LogEntry]
 
@@ -29,8 +29,8 @@ trait Logging {
 			case Trace(msg) => logRuntime.trace(msg)
 			case Debug(msg) => logRuntime.debug(msg)
 			case Info(msg) => logRuntime.info(msg)
-			case Warning(msg) => logRuntime.warn(msg)
-			case Error(msg) => logRuntime.error(msg)
+			case Warn(msg) => logRuntime.warn(msg)
+			case Err(msg) => logRuntime.error(msg)
 		}
 
 }
