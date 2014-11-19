@@ -25,7 +25,8 @@ import scala.concurrent.duration._
 trait Server {
 	self: Environment =>
 
-	protected implicit val system = ActorSystem()
+	protected implicit val system = ActorSystem("vitrin-server", com.typesafe.config.ConfigFactory.parseString("akka.loglevel=\"OFF\""))
+
 	private implicit val materializer = FlowMaterializer()
 
 	import system.dispatcher
