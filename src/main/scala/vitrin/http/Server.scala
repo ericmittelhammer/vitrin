@@ -29,9 +29,7 @@ trait Server {
 
 	val name: String
 
-	protected implicit val system = ActorSystem(name, com.typesafe.config.ConfigFactory.parseString("akka.loglevel=\"OFF\""))
-
-	private implicit val materializer = FlowMaterializer()
+	protected lazy implicit val system = ActorSystem(name, com.typesafe.config.ConfigFactory.parseString("akka.loglevel=\"OFF\""))
 
 	import system.dispatcher
 
@@ -59,11 +57,13 @@ trait Server {
 		arg.getOrElse(8080)
 	}
 
-	private def connectionHandler(connectionStream: Publisher[Http.IncomingConnection]) =
+	private def connectionHandler(connectionStream: Publisher[Http.IncomingConnection]) = {
+		implicit val materializer = FlowMaterializer()
 		Flow(connectionStream).foreach {
 			case Http.IncomingConnection(remoteAddress, requestProducer, responseConsumer) =>
 				Flow(requestProducer).mapFuture(requestHandler).produceTo(responseConsumer)
 		}
+	}
 
 	private def requestHandler =
 		router andThen run andThen (_ flatMap resultHandler) orElse notFoundRouter andThen (_ recoverWith exceptionHandler)
