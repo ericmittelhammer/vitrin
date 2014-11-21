@@ -10,12 +10,12 @@ object routes {
 			Some((request.method, request.uri.path.toString))
 	}
 
-	implicit class PathContext(val sc: StringContext) {
+	implicit class PathContext(val context: StringContext) {
 		object p {
-			def apply(args: Any*): String = sc.s(args:_*)
+			def apply(parts: Any*): String = context.s(parts:_*)
 			def unapplySeq(s: String): Option[Seq[String]] = {
-				val regexp = sc.parts.mkString ("([^/]+)").r
-				regexp.unapplySeq(s)
+				val pattern = context.parts.mkString("([^/]+)").r
+				pattern.unapplySeq(s)
 			}
 		}
 	}
