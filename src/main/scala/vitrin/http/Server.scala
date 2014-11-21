@@ -34,6 +34,7 @@ trait Server {
 	import system.dispatcher
 
 	def main(args: Array[String]) = {
+		val logger = org.slf4j.LoggerFactory.getLogger(name)
 		val interface = "localhost"
 		val port = portFrom(args)
 		implicit val askTimeout: Timeout = 500.millis
@@ -41,11 +42,11 @@ trait Server {
 		binding.onSuccess {
 			case Http.ServerBinding(_, connectionStream) =>
 				connectionHandler(connectionStream)
-				println(s"Starting server at $interface:$port")
+				logger.info(s"Starting server at $interface:$port")
 		}
 		binding.onFailure {
 			case e: AskTimeoutException =>
-				println(s"An error occured while starting server at $interface:$port: ${e.getMessage}")
+				logger.info(s"An error occured while starting server at $interface:$port: ${e.getMessage}")
 		}
 	}
 
