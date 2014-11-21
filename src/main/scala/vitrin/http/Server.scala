@@ -63,13 +63,20 @@ trait Server {
 				Flow(requestProducer).mapFuture(requestHandler).produceTo(responseConsumer)
 		}
 
-	private def requestHandler = router andThen run andThen (_ flatMap resultHandler) orElse notFoundRouter andThen (_ recoverWith exceptionHandler)
+	private def requestHandler =
+		router andThen run andThen (_ flatMap resultHandler) orElse notFoundRouter andThen (_ recoverWith exceptionHandler)
+
+	def router: PartialFunction[HttpRequest, Process[HttpResponse]]
+
+	private def resultHandler = successHandler orElse errorHandler
 
 	private def successHandler: PartialFunction[Result[HttpResponse], Future[HttpResponse]] = {
 		case Success(value) => Future.successful(value)
 	}
 
-	private def resultHandler = successHandler orElse errorHandler
+	def errorHandler: PartialFunction[Result[HttpResponse], Future[HttpResponse]] = {
+		case Failure(error) => Future.successful(HttpResponse(500))
+	}
 
 	protected def notFoundRouter: PartialFunction[HttpRequest, Future[HttpResponse]] = {
 		case _ => Future.successful(HttpResponse(404))
@@ -78,11 +85,5 @@ trait Server {
 	private def exceptionHandler: PartialFunction[Throwable, Future[HttpResponse]] = {
 		case e: Throwable => Future.successful(HttpResponse(500))
 	}
-
-	def errorHandler: PartialFunction[Result[HttpResponse], Future[HttpResponse]] = {
-		case Failure(error) => Future.successful(HttpResponse(500))
-	}
-
-	def router: PartialFunction[HttpRequest, Process[HttpResponse]]
 
 }
