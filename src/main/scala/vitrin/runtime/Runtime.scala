@@ -7,5 +7,5 @@ import scala.concurrent.ExecutionContext
 
 trait Runtime {
 	type Process[+A]
-	def run[A](render: Process[A])(implicit ec: ExecutionContext): Future[Result[A]]
+	def run[A](process: Process[A])(implicit ec: ExecutionContext): Future[Result[A]]
 }
