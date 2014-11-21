@@ -1,5 +1,9 @@
 package vitrin.runtime.logging
 
+import vitrin.runtime.DefaultRuntime
+
 trait DefaultLogging extends Logging {
-	val logger = new Slf4jLogger("vitrin-logger")
+	self: DefaultRuntime =>
+
+	val logger = new Slf4jLogger(name)
 }

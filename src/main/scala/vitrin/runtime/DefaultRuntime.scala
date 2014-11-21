@@ -29,6 +29,8 @@ trait DefaultRuntime extends Runtime {
 		}
 	}
 
+	val name: String
+
 	def trace[A](msg: String)(implicit lm: Monoid[Log]): Process[Unit] = ReadWrite.write(Log(Trace(msg)))
 	def debug[A](msg: String)(implicit lm: Monoid[Log]): Process[Unit] = ReadWrite.write(Log(Debug(msg)))
 	def info[A](msg: String)(implicit lm: Monoid[Log]): Process[Unit] = ReadWrite.write(Log(Info(msg)))
