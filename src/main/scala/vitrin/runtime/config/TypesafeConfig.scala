@@ -3,7 +3,7 @@ package vitrin.runtime.config
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigException
 
-class TypesafeConfigRuntime extends ConfigRuntime {
+class TypesafeConfig extends Config {
 	private val config = ConfigFactory.load
 
 	def get(path: String) = try {

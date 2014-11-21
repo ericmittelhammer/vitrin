@@ -1,6 +1,5 @@
 package vitrin.http
 
-import extractors._
 import vitrin.runtime.Runtime
 import vitrin.Result
 import vitrin.Success
@@ -84,6 +83,6 @@ trait Server {
 		case Failure(error) => Future.successful(HttpResponse(500))
 	}
 
-	def router: PartialFunction[HttpRequest, Render[HttpResponse]]
+	def router: PartialFunction[HttpRequest, Process[HttpResponse]]
 
 }

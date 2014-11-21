@@ -3,7 +3,7 @@ package vitrin.http
 import akka.http.model._
 import HttpMethods._
 
-object extractors {
+object routes {
 
 	object at {
 		def unapply(request: HttpRequest): Option[(HttpMethod, String)] =

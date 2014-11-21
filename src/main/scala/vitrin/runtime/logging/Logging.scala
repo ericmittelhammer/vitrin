@@ -22,15 +22,15 @@ trait Logging {
 		def append(f1: Log, f2: => Log) = f1 ::: f2
 	}
 
-	val logRuntime: LogRuntime
+	val logger: Logger
 
 	def runLog(log: Log): Unit =
 		log.foreach {
-			case Trace(msg) => logRuntime.trace(msg)
-			case Debug(msg) => logRuntime.debug(msg)
-			case Info(msg) => logRuntime.info(msg)
-			case Warn(msg) => logRuntime.warn(msg)
-			case Err(msg) => logRuntime.error(msg)
+			case Trace(msg) => logger.trace(msg)
+			case Debug(msg) => logger.debug(msg)
+			case Info(msg) => logger.info(msg)
+			case Warn(msg) => logger.warn(msg)
+			case Err(msg) => logger.error(msg)
 		}
 
 }

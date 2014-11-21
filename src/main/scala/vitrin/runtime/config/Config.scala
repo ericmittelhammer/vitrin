@@ -1,5 +1,5 @@
 package vitrin.runtime.config
 
-trait ConfigRuntime {
+trait Config {
 	def get(path: String): Option[String]
 }
