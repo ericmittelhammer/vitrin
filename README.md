@@ -151,4 +151,6 @@ workers-context {
 
 foo.bar = "foobaring with"
 ```
+All the above examples can be found in the [vitrin-example](https://github.com/privateblue/vitrin-example) repository.
+
 Vitrin currently uses Akka Stream 0.9, Akka Http Core 0.9, [Typesafe Config 1.2.1](https://github.com/typesafehub/config) and [Slf4j Api 1.7.7](http://www.slf4j.org/).
