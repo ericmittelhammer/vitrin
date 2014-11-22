@@ -19,6 +19,12 @@ trait DefaultRuntime extends Runtime {
 
 	type Process[+A] = ReadWrite[Env, Log, A]
 
+	object Process {
+		def read[A](f: Env => Future[Result[A]])(implicit ec: ExecutionContext) = ReadWrite.read[Env, Log, A](f)
+		def write(log: Log)(implicit lm: Monoid[Log]) = ReadWrite.write[Env, Log](log)
+		def error(msg: String, cs: Option[Error] = None) = ReadWrite.error[Env, Log](msg, cs)
+	}
+
 	def run[A](process: Process[A])(implicit ec: ExecutionContext): Future[Result[A]] = {
 		val result = process.run(environment)
 		result onSuccess {
@@ -31,16 +37,13 @@ trait DefaultRuntime extends Runtime {
 
 	val name: String
 
-	def trace[A](msg: String)(implicit lm: Monoid[Log]): Process[Unit] = ReadWrite.write(Log(Trace(msg)))
-	def debug[A](msg: String)(implicit lm: Monoid[Log]): Process[Unit] = ReadWrite.write(Log(Debug(msg)))
-	def info[A](msg: String)(implicit lm: Monoid[Log]): Process[Unit] = ReadWrite.write(Log(Info(msg)))
-	def warn[A](msg: String)(implicit lm: Monoid[Log]): Process[Unit] = ReadWrite.write(Log(Warn(msg)))
-	def err[A](msg: String)(implicit lm: Monoid[Log]): Process[Unit] = ReadWrite.write(Log(Err(msg)))
+	def trace(msg: String)(implicit lm: Monoid[Log]): Process[Unit] = Process.write(Log(Trace(msg)))
+	def debug(msg: String)(implicit lm: Monoid[Log]): Process[Unit] = Process.write(Log(Debug(msg)))
+	def info(msg: String)(implicit lm: Monoid[Log]): Process[Unit] = Process.write(Log(Info(msg)))
+	def warn(msg: String)(implicit lm: Monoid[Log]): Process[Unit] = Process.write(Log(Warn(msg)))
+	def err(msg: String)(implicit lm: Monoid[Log]): Process[Unit] = Process.write(Log(Err(msg)))
 
 	def config(path: String)(implicit lm: Monoid[Log], ec: ExecutionContext): Process[Option[String]] =
-		ReadWrite.read { env => Future.successful(Success(env.config.get(path))) }
-
-	def error(msg: String, cs: Option[Error] = None)(implicit lm: Monoid[Log]): Process[Unit] =
-		ReadWrite.error(msg, cs)
+		Process.read { env => Future.successful(Success(env.config.get(path))) }
 
 }
