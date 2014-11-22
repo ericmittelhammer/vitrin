@@ -46,7 +46,7 @@ object example1 extends Server with ExampleRuntime {
 		prefix <- config("foo.bar")
 		msg = prefix.getOrElse("I don't know what's happening but")
 		_ <- info(s"$msg $x")
-		foo <- redisGet("foo")
+		foo <- withRedis { redis => redis.get[String]("foo") }
 		fooMsg = foo.getOrElse("not much else")
 	} yield HttpResponse(entity = s"$msg $x and $fooMsg")
 
@@ -77,13 +77,17 @@ object example1 extends Server with ExampleRuntime {
 
 }
 ```
-The above ```example1``` server has a ```Runtime``` implementation mixed in, that extends the ```DefaultRuntime``` provided by the library. A runtime is where all methods, that interact with the environment (except for logging), can be defined. The following example adds a new method to the default runtime, that can read values from Redis:
+The above ```example1``` server has a ```Runtime``` implementation mixed in, that extends the ```DefaultRuntime``` provided by the library. A runtime is where all methods, that interact with the environment (except for logging), can be defined. The following example adds a new method to the default runtime, that can read from and write to Redis:
 ```scala
 import vitrin.runtime.DefaultRuntime
 import vitrin.runtime.DefaultEnvironment
 import vitrin.runtime.logging.DefaultLogging
 import vitrin.ReadWrite
 import vitrin.Success
+import vitrin.Failure
+import vitrin.Error
+import redis.RedisCommands
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 
 trait ExampleRuntime extends DefaultRuntime with DefaultLogging {
@@ -99,12 +103,16 @@ trait ExampleRuntime extends DefaultRuntime with DefaultLogging {
 	val environment = new DefaultEnvironment with RedisEnvironment
 
 	/**
-	  * This helper method reads a value from the environment. It reads a key from Redis and
-	  * lifts it to a process of an option of a string, so that it can be used flatmapped onto
-	  * other computations, and thus can be used in for comprehensions.
+	  * This helper method takes a command against a Redis connection, executes it, and lifts
+	  * the result to a process of the return type, so that it can be flatmapped onto other
+	  * computations, and thus can be used in for comprehensions, as seen in the previous example.
 	  */
-	def redisGet(key: String)(implicit ec: ExecutionContext): Process[Option[String]] =
-		ReadWrite.read { env => env.redis.get[String](key).map(Success(_)) }
+	def withRedis[A](fn: RedisCommands => Future[A])(implicit ec: ExecutionContext): Process[A] =
+		ReadWrite.read { env =>
+			fn(env.redis).map(Success(_)).recover {
+				case e: Throwable => Failure(Error(e.getMessage))
+			}
+		}
 }
 ```
 The type of the environment used by the runtime is set to be ```DefaultEnvironment with RedisEnvironment```, where ```RedisEnvironment``` defines how to connect to Redis:
@@ -119,6 +127,8 @@ trait RedisEnvironment {
 	val redis = RedisClient()
 }
 ```
+This example uses the [rediscala](https://github.com/etaty/rediscala) driver, vesion 1.4.0.
+
 The ```example1``` server above used an object that contained all configured execution contexts:
 ```scala
 import vitrin.runtime.config.TypesafeConfig
