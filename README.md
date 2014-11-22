@@ -63,7 +63,7 @@ object example1 extends Server with ExampleRuntime {
 	  */
 	def failure = for {
 		_ <- err("intentional error occured big time")
-		_ <- error("intentional error")
+		_ <- Process.error("intentional error")
 	} yield HttpResponse()
 
 	/**
@@ -108,7 +108,7 @@ trait ExampleRuntime extends DefaultRuntime with DefaultLogging {
 	  * computations, and thus can be used in for comprehensions, as seen in the previous example.
 	  */
 	def withRedis[A](fn: RedisCommands => Future[A])(implicit ec: ExecutionContext): Process[A] =
-		ReadWrite.read { env =>
+		Process.read { env =>
 			fn(env.redis).map(Success(_)).recover {
 				case e: Throwable => Failure(Error(e.getMessage))
 			}
