@@ -5,6 +5,7 @@ import vitrin.Result
 import vitrin.Success
 import vitrin.Failure
 import vitrin.runtime.config.TypesafeConfig
+import vitrin.runtime.logging.Logging
 
 import akka.pattern.ask
 import akka.actor.ActorSystem
@@ -27,7 +28,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 trait Server {
-	self: Runtime =>
+	self: Runtime with Logging =>
 
 	val name: String
 
@@ -41,7 +42,6 @@ trait Server {
 		defaultExecutionContext = executionContext)
 
 	def main(args: Array[String]) = {
-		val logger = org.slf4j.LoggerFactory.getLogger(name)
 		val interface = "localhost"
 		val port = portFrom(args)
 		implicit val askTimeout: Timeout = 500.millis
