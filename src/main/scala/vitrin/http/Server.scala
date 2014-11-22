@@ -4,6 +4,7 @@ import vitrin.runtime.Runtime
 import vitrin.Result
 import vitrin.Success
 import vitrin.Failure
+import vitrin.runtime.config.TypesafeConfig
 
 import akka.pattern.ask
 import akka.actor.ActorSystem
@@ -22,6 +23,7 @@ import akka.stream.FlowMaterializer
 import org.reactivestreams.Publisher
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 trait Server {
@@ -29,9 +31,14 @@ trait Server {
 
 	val name: String
 
-	protected lazy implicit val system = ActorSystem(name, com.typesafe.config.ConfigFactory.parseString("akka.loglevel=\"OFF\""))
+	implicit val executionContext: ExecutionContext
 
-	import system.dispatcher
+	private lazy val akkaConfig = TypesafeConfig.akkaConfig(name)
+	private lazy implicit val system = ActorSystem.create(
+		name = name,
+		config = akkaConfig,
+		classLoader = null,
+		defaultExecutionContext = executionContext)
 
 	def main(args: Array[String]) = {
 		val logger = org.slf4j.LoggerFactory.getLogger(name)
@@ -46,7 +53,7 @@ trait Server {
 		}
 		binding.onFailure {
 			case e: AskTimeoutException =>
-				logger.info(s"An error occured while starting server at $interface:$port: ${e.getMessage}")
+				logger.error(s"An error occured while starting server at $interface:$port: ${e.getMessage}")
 		}
 	}
 
