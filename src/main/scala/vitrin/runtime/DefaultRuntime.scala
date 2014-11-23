@@ -6,6 +6,7 @@ import vitrin.ReadWrite
 import vitrin.Monoid
 import vitrin.Result
 import vitrin.Success
+import vitrin.Failure
 import vitrin.Error
 
 import scala.concurrent.Future
@@ -45,5 +46,11 @@ trait DefaultRuntime extends Runtime {
 
 	def config(path: String)(implicit lm: Monoid[Log], ec: ExecutionContext): Process[Option[String]] =
 		Process.read { env => Future.successful(Success(env.config.get(path))) }
+
+	def fromFuture[A](fn: Env => Future[A])(implicit ec: ExecutionContext): Process[A] =
+		Process.read { env => fn(env).map(Success(_)).recover {
+				case e: Throwable => Failure(Error(e.getMessage))
+			}
+		}
 
 }
