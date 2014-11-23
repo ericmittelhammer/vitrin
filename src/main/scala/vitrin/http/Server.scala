@@ -17,8 +17,8 @@ import akka.http.Http
 import akka.http.model._
 import HttpMethods._
 
-import akka.stream.scaladsl.Flow
-import akka.stream.MaterializerSettings
+import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.Sink
 import akka.stream.FlowMaterializer
 
 import org.reactivestreams.Publisher
@@ -67,9 +67,9 @@ trait Server {
 
 	private def connectionHandler(connectionStream: Publisher[Http.IncomingConnection]) = {
 		implicit val materializer = FlowMaterializer()
-		Flow(connectionStream).foreach {
+		Source(connectionStream).foreach {
 			case Http.IncomingConnection(remoteAddress, requestProducer, responseConsumer) =>
-				Flow(requestProducer).mapFuture(requestHandler).produceTo(responseConsumer)
+				Source(requestProducer).mapAsync(requestHandler).to(Sink(responseConsumer)).run()
 		}
 	}
 
