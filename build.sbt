@@ -6,10 +6,13 @@ scalaVersion := "2.11.4"
 
 resolvers += "rediscala" at "http://dl.bintray.com/etaty/maven"
 
+resolvers += "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
+
 libraryDependencies ++= Seq(
 	"com.typesafe.akka" % "akka-stream-experimental_2.11" % "0.11",
 	"com.typesafe.akka" % "akka-http-core-experimental_2.11" % "0.11",
 	"com.typesafe" % "config" % "1.2.1",
 	"org.slf4j" % "slf4j-api" % "1.7.7",
-	"com.etaty.rediscala" %% "rediscala" % "1.4.0"
-)
+	"com.etaty.rediscala" %% "rediscala" % "1.4.0",
+ 	"org.reactivemongo" %% "reactivemongo" % "0.10.5.0.akka23"
+ )
