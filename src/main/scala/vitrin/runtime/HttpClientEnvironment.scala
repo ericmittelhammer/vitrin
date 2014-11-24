@@ -21,8 +21,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 trait HttpClientEnvironment {
-	private val systemConfig = TypesafeConfig.akkaConfig("http-client")
-	private implicit val system = ActorSystem("http-client", systemConfig)
+	private val systemConfig = TypesafeConfig.akkaConfig("http-client-system")
+	private implicit val system = ActorSystem("http-client-system", systemConfig)
 	private implicit val materializer = FlowMaterializer()
 
 	object http {
