@@ -69,7 +69,7 @@ trait Server {
 		implicit val materializer = FlowMaterializer()
 		Source(connectionStream).foreach {
 			case Http.IncomingConnection(remoteAddress, requestProducer, responseConsumer) =>
-				Source(requestProducer).mapAsync(requestHandler).to(Sink(responseConsumer)).run()
+				Source(requestProducer).mapAsyncUnordered(requestHandler).to(Sink(responseConsumer)).run()
 		}
 	}
 
