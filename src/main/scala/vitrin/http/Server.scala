@@ -32,14 +32,13 @@ trait Server {
 
 	val name: String
 
-	implicit val executionContext: ExecutionContext
-
-	private lazy val akkaConfig = TypesafeConfig.akkaConfig(name)
+	private def systemName = s"$name-server-system"
+	private lazy val akkaConfig = TypesafeConfig.akkaConfig(systemName)
 	private lazy implicit val system = ActorSystem.create(
-		name = name,
-		config = akkaConfig,
-		classLoader = null,
-		defaultExecutionContext = executionContext)
+		name = systemName,
+		config = akkaConfig)
+
+	implicit val executionContext: ExecutionContext
 
 	def main(args: Array[String]) = {
 		val interface = "localhost"

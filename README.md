@@ -23,7 +23,7 @@ object example1 extends Server with ExampleRuntime {
 	/**
 	  * Specify a default execution context for the server.
 	  */
-	implicit val executionContext = Dispatchers.workers
+	implicit val executionContext = Dispatchers.service
 
 	/**
 	  * The router is a partial function from http requests to processes of http responses.
@@ -122,8 +122,8 @@ import akka.actor.ActorSystem
 import redis.RedisClient
 
 trait RedisEnvironment {
-	private val systemConfig = TypesafeConfig.akkaConfig("redis")
-	private implicit val system = ActorSystem("redis", systemConfig)
+	private val systemConfig = TypesafeConfig.akkaConfig("redis-system")
+	private implicit val system = ActorSystem("redis-system", systemConfig)
 	val redis = RedisClient()
 }
 ```
@@ -136,16 +136,36 @@ import akka.actor.ActorSystem
 
 object Dispatchers {
 	private val system = ActorSystem("dispatchers", TypesafeConfig.akkaLoggingOff)
-	val workers = system.dispatchers.lookup("workers-context")
+	val service = system.dispatchers.lookup("service")
 }
 ```
-The ```workers``` dispatcher is configured in the configuration file, that also contains the previously used ```foo.bar``` value:
+The ```service``` execution context is configured in the configuration file, that also contains the previously used ```foo.bar``` value. It is possible to configure here the default execution context of every actor system, that is used by the application, like the server's, that listens to requests and responds to them, or the one used by rediscala:
 ```
-workers-context {
+example1-server-system {
+	akka.actor.default-dispatcher {
+		executor = "fork-join-executor"
+		fork-join-executor {
+			parallelism-min = 1
+			parallelism-max = 1
+		}
+	}
+}
+
+redis-system {
+	akka.actor.default-dispatcher {
+		executor = "fork-join-executor"
+		fork-join-executor {
+			parallelism-min = 1
+			parallelism-max = 1
+		}
+	}
+}
+
+service {
 	executor = "fork-join-executor"
 	fork-join-executor {
-		parallelism-min = 5
-	    parallelism-max = 5
+		parallelism-min = 2
+	    parallelism-max = 2
 	}
 }
 
