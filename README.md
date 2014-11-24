@@ -127,7 +127,7 @@ trait RedisEnvironment {
 	val redis = RedisClient()
 }
 ```
-This example uses the [rediscala](https://github.com/etaty/rediscala) driver. In reality, such a Redis runtime and environment is provided by the library (see examples [here](https://github.com/privateblue/vitrin-example)).
+This example uses the [rediscala](https://github.com/etaty/rediscala) driver. In reality, such a Redis runtime and environment is provided by the library (see examples [here](https://github.com/privateblue/vitrin-example)), and the code above is just to demonstrate how the default runtime and environment can be extended in a client application.
 
 The ```example1``` server above used an object that contained all configured execution contexts:
 ```scala
