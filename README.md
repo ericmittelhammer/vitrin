@@ -77,7 +77,7 @@ object example1 extends Server with ExampleRuntime {
 
 }
 ```
-The above ```example1``` server has a ```Runtime``` implementation mixed in, that extends the ```DefaultRuntime``` provided by the library. A runtime is where all methods, that interact with the environment (except for logging), can be defined. The following example adds a new method to the default runtime, that can read from and write to Redis:
+The above ```example1``` server has a ```Runtime``` implementation mixed in, that extends the ```DefaultRuntime``` provided by the library. A runtime is where all methods, that interact with the environment in a side effecting fashion(except for logging), can be defined. The following example adds a new method to the default runtime, that can read from and write to Redis:
 ```scala
 import vitrin.runtime.DefaultRuntime
 import vitrin.runtime.DefaultEnvironment
@@ -127,7 +127,7 @@ trait RedisEnvironment {
 	val redis = RedisClient()
 }
 ```
-This example uses the [rediscala](https://github.com/etaty/rediscala) driver, vesion 1.4.0.
+This example uses the [rediscala](https://github.com/etaty/rediscala) driver. In reality, such a Redis runtime and environment is provided by the library (see examples [here](https://github.com/privateblue/vitrin-example)).
 
 The ```example1``` server above used an object that contained all configured execution contexts:
 ```scala
@@ -151,6 +151,6 @@ workers-context {
 
 foo.bar = "foobaring with"
 ```
-All the above examples can be found in the [vitrin-example](https://github.com/privateblue/vitrin-example) repository.
+The above examples can be found in the [vitrin-example](https://github.com/privateblue/vitrin-example) repository.
 
 Vitrin currently uses Akka Stream 0.11, Akka Http Core 0.11, [Typesafe Config 1.2.1](https://github.com/typesafehub/config) and [Slf4j Api 1.7.7](http://www.slf4j.org/).
