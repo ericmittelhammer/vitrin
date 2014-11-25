@@ -15,7 +15,7 @@ import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.Sink
 import akka.stream.FlowMaterializer
 
-import scala.collection.immutable.Iterable
+import scala.collection.immutable._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -36,15 +36,15 @@ trait HttpClientEnvironment {
 			val requestUri = s"${uri.getPath}?${uri.getQuery}"
 		}
 
-		def get(address: String)(implicit ec: ExecutionContext): Future[HttpResponse] = {
+		def get(address: String, headers: Seq[HttpHeader] = Seq())(implicit ec: ExecutionContext): Future[HttpResponse] = {
 			val url = Url(address)
-			val req = HttpRequest(GET, uri = url.requestUri)
+			val req = HttpRequest(GET, uri = url.requestUri, headers = headers)
 			connect(url) flatMap request(req)
 		}
 
-		def post(address: String, body: RequestEntity)(implicit ec: ExecutionContext): Future[HttpResponse] = {
+		def post(address: String, body: RequestEntity, headers: Seq[HttpHeader] = Seq())(implicit ec: ExecutionContext): Future[HttpResponse] = {
 			val url = Url(address)
-			val req = HttpRequest(POST, uri = url.requestUri, entity = body)
+			val req = HttpRequest(POST, uri = url.requestUri, entity = body, headers = headers)
 			connect(url) flatMap request(req)
 		}
 
