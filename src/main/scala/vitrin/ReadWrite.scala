@@ -25,6 +25,9 @@ case class ReadWrite[Env, Log, +A](run: Env => Future[(Log, Result[A])]) {
 }
 
 object ReadWrite {
+	def apply[Env, Log, A](a: A)(implicit lm: Monoid[Log]): ReadWrite[Env, Log, A] =
+		ReadWrite { env => Future.successful((lm.zero, Success(a))) }
+
 	def read[Env, Log, A](f: Env => Future[Result[A]])(implicit lm: Monoid[Log], ec: ExecutionContext): ReadWrite[Env, Log, A] =
 		ReadWrite { env => f(env).map((lm.zero, _)) }
 
