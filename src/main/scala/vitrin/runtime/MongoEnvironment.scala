@@ -10,8 +10,6 @@ import reactivemongo.api.MongoConnectionOptions
 import reactivemongo.api.MongoDriver
 import reactivemongo.core.nodeset.Authenticate
 
-import scala.concurrent.ExecutionContext
-
 import vitrin.runtime.config.TypesafeConfig
 
 
@@ -25,7 +23,6 @@ object MongoEnvironment {
 trait MongoEnvironment {
   private val systemConfig = TypesafeConfig.akkaConfig("mongo-system")
   private implicit val system = ActorSystem("mongo-system", systemConfig)
-  implicit val ec: ExecutionContext
   implicit val mongoConfig: MongoEnvironment.Config
   
    
@@ -33,33 +30,27 @@ trait MongoEnvironment {
     
     import scala.collection.JavaConverters._
 
-    implicit private def ConfigString(key: MongoEnvironment.ConfigOption)
-    (implicit config: MongoEnvironment.Config): String = config.v.getString(key.v)
-    implicit private def ConfigInt(key: MongoEnvironment.ConfigOption)
-    (implicit config: MongoEnvironment.Config): Int = config.v.getInt(key.v)
-    implicit private def ConfigBoolean(key: MongoEnvironment.ConfigOption)
-    (implicit config: MongoEnvironment.Config): Boolean = config.v.getBoolean(key.v)
-    implicit private def ConfigStringList(key: MongoEnvironment.ConfigOption)
-    (implicit config: MongoEnvironment.Config): List[String] = config.v.getStringList(key.v).asScala.toList
-    implicit private def ConfigConfigList(key: MongoEnvironment.ConfigOption)
-    (implicit config: MongoEnvironment.Config): List[TSConfig] = config.v.getConfigList(key.v).asScala.toList
+    implicit private def ConfigString(config: TSConfig, key: String): String = config.getString(key)
+    implicit private def ConfigInt(config: TSConfig, key: String): Int = config.getInt(key)
+    implicit private def ConfigBoolean(config: TSConfig, key: String): Boolean = config.getBoolean(key)
+    implicit private def ConfigStringList(config: TSConfig, key: String): List[String] = config.getStringList(key).asScala.toList
+    implicit private def ConfigConfigList(config: TSConfig, key: String): List[TSConfig] = config.getConfigList(key).asScala.toList
 
-    private def getConfig[A](key: String)(implicit configGetter: MongoEnvironment.ConfigOption => A, config: MongoEnvironment.Config): Option[A] = {
-      if (systemConfig.hasPath(key)) {
-        Some(configGetter(MongoEnvironment.ConfigOption(key)))
+    private def getConfig[A](key: String)(implicit configGetter: (TSConfig, String) => A, config: MongoEnvironment.Config): Option[A] = {
+      if (config.v.hasPath(key)) {
+        Some(configGetter(config.v, key))
       } else {
         None
       }
     }
     
     private def getConfig[A](config: TSConfig, key: String)
-      (implicit configGetter: MongoEnvironment.ConfigOption => A): Option[A] = getConfig(key)(configGetter, MongoEnvironment.Config(config)) 
+      (implicit configGetter: (TSConfig, String) => A): Option[A] = getConfig(key)(configGetter, MongoEnvironment.Config(config)) 
     
     def build(): MongoEnvironment.VitrinMongoConnection = {
       val dbO: Option[String] = getConfig("db")
       val userO: Option[String] = getConfig("user")
       val passwordO: Option[String] = getConfig("password")
-      
       val connectTimeoutMS: Int = getConfig[Int]("connectTimeoutMS").getOrElse(0)
       val authSource: Option[String] = getConfig("authSource")
       val tcpNoDelay: Boolean = getConfig[Boolean]("tcpNoDelay").getOrElse(true)
@@ -74,6 +65,7 @@ trait MongoEnvironment {
       }
       
       val ignoredOptions = getConfig[List[String]]("ignoredOptions").getOrElse(List())
+
       val options = MongoConnectionOptions(
           connectTimeoutMS = connectTimeoutMS,
           authSource = authSource,
@@ -96,9 +88,8 @@ trait MongoEnvironment {
       val connection = (new MongoDriver).connection(parameters)
       MongoEnvironment.VitrinMongoConnection(connection, dbO)
     }
-    
   }
   
-  val mongo = MongoConnectionBuilder.build()
+  lazy val mongo = MongoConnectionBuilder.build()
   
 }
