@@ -21,6 +21,7 @@ trait DefaultRuntime extends Runtime {
 	type Process[+A] = ReadWrite[Env, Log, A]
 
 	object Process {
+		def apply[A](a: A) = ReadWrite[Env, Log, A](a)
 		def read[A](f: Env => Future[Result[A]])(implicit ec: ExecutionContext) = ReadWrite.read[Env, Log, A](f)
 		def write(log: Log)(implicit lm: Monoid[Log]) = ReadWrite.write[Env, Log](log)
 		def error(msg: String, cs: Option[Error] = None) = ReadWrite.error[Env, Log](msg, cs)
