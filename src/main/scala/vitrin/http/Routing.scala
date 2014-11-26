@@ -12,9 +12,12 @@ class Routing[F[_]](routes: (String, Regex => HttpRequest => F[HttpResponse])*) 
 	private case class Tree(nodes: Map[String, Tree], regex: String, handler: Option[Regex => HttpRequest => F[HttpResponse]]) {
 
 		def insert(route: Route): Tree = {
-			route.method match {
-				case "_" => insert("$" +: route.path, route.handler)
-				case _ => insert(route.method +: route.path, route.handler)
+			val methodString = if (route.method == "_") "$" else route.method
+			nodes.get(methodString) match {
+				case Some(subtree) =>
+					Tree(nodes.updated(methodString, subtree.insert(route.path, route.handler)), regex, handler)
+			  	case None =>
+					Tree(nodes + (methodString -> Tree(Map.empty, "", None).insert(route.path, route.handler)), regex, handler)
 			}
 		}
 
@@ -22,7 +25,7 @@ class Routing[F[_]](routes: (String, Regex => HttpRequest => F[HttpResponse])*) 
 			routePath match {
 			  	case head :: tail =>
 					val regexPart = head match {
-						  case "$" => """(^/+)"""
+						  case "$" => """([^/]+)"""
 						  case "#" => """(\d+)"""
 						  case _ => head
 					}
@@ -77,12 +80,12 @@ class Routing[F[_]](routes: (String, Regex => HttpRequest => F[HttpResponse])*) 
 		splitRoutes.foldLeft(Tree(Map.empty, "", None))(_ insert _)
 	}
 
-	def parseRouteString(route: String): (String, List[String]) = {
+	private def parseRouteString(route: String): (String, List[String]) = {
 		val (method, uri) = route.splitAt(route.indexOf(' '))
-		(method, parseUri(uri))
+		(method, parseUri(uri.trim))
 	}
 
-	def parseUri(uri: String): List[String] =
+	private def parseUri(uri: String): List[String] =
 		uri.dropWhile(_ == '/').split('/').toList
 
 	val run: PartialFunction[HttpRequest, F[HttpResponse]] = Function unlift { request =>
