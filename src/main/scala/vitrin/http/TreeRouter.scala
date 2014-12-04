@@ -5,7 +5,7 @@ import HttpMethods._
 import scala.util.matching.Regex
 import vitrin._
 
-class Routing[F[_]](routes: (String, Regex => HttpRequest => F[HttpResponse])*) {
+class TreeRouter[F[_]](routes: (String, Regex => HttpRequest => F[HttpResponse])*) {
 
 	private case class Route(method: String, path: List[String], handler: Regex => HttpRequest => F[HttpResponse])
 
