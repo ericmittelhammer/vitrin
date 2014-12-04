@@ -26,15 +26,15 @@ import org.reactivestreams.Publisher
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.io.StdIn
 
 trait Server {
-	self: Runtime with Logging =>
 
 	val name: String
 
 	private def systemName = s"$name-server-system"
 	private lazy val akkaConfig = TypesafeConfig.akkaConfig(systemName)
-	private lazy implicit val system = ActorSystem.create(
+	protected lazy implicit val system = ActorSystem.create(
 		name = systemName,
 		config = akkaConfig)
 
@@ -43,16 +43,23 @@ trait Server {
 	def main(args: Array[String]) = {
 		val interface = "localhost"
 		val port = portFrom(args)
+		val logger = org.slf4j.LoggerFactory.getLogger(name)
 		implicit val askTimeout: Timeout = 500.millis
 		val binding = IO(Http) ? Http.Bind(interface = interface, port = port)
 		binding.onSuccess {
 			case Http.ServerBinding(_, connectionStream) =>
 				connectionHandler(connectionStream)
 				logger.info(s"Starting server at $interface:$port")
+				println(s"PRESS ANY KEY to stop...")
+				StdIn.readLine
+				runtime.stop
+				system.shutdown
 		}
 		binding.onFailure {
 			case e: AskTimeoutException =>
 				logger.error(s"An error occured while starting server at $interface:$port: ${e.getMessage}")
+				runtime.stop
+				system.shutdown
 		}
 	}
 
@@ -72,10 +79,12 @@ trait Server {
 		}
 	}
 
-	private def requestHandler =
-		router andThen run andThen (_ flatMap resultHandler) orElse notFoundRouter andThen (_ recoverWith exceptionHandler)
+	val runtime: Runtime with Logging
 
-	def router: PartialFunction[HttpRequest, Process[HttpResponse]]
+	private def requestHandler =
+		router andThen runtime.run andThen (_ flatMap resultHandler) orElse notFoundRouter andThen (_ recoverWith exceptionHandler)
+
+	def router: PartialFunction[HttpRequest, runtime.Process[HttpResponse]]
 
 	private def resultHandler = successHandler orElse errorHandler
 

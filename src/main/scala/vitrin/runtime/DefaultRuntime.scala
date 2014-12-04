@@ -12,11 +12,11 @@ import vitrin.Error
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 
-trait DefaultRuntime extends Runtime {
+trait DefaultRuntime[Env <: DefaultEnvironment] extends Runtime {
 	self: Logging =>
 
-	type Env <: DefaultEnvironment
-	val environment: Env
+	protected def name: String
+	protected def environment: Env
 
 	type Process[+A] = ReadWrite[Env, Log, A]
 
@@ -36,8 +36,6 @@ trait DefaultRuntime extends Runtime {
 			case (_, value) => value
 		}
 	}
-
-	val name: String
 
 	def trace(msg: String)(implicit lm: Monoid[Log]): Process[Unit] = Process.write(Log(Trace(msg)))
 	def debug(msg: String)(implicit lm: Monoid[Log]): Process[Unit] = Process.write(Log(Debug(msg)))
