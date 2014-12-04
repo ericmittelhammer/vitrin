@@ -9,10 +9,8 @@ import redis.RedisCommands
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 
-trait RedisRuntime extends DefaultRuntime {
+trait RedisRuntime[Env <: DefaultEnvironment with RedisEnvironment] extends DefaultRuntime[Env] {
 	self: Logging =>
-
-	type Env <: DefaultEnvironment with RedisEnvironment
 
 	def withRedis[A](fn: RedisCommands => Future[A])(implicit ec: ExecutionContext): Process[A] =
 		fromFuture { env => fn(env.redis) }

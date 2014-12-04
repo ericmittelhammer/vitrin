@@ -59,4 +59,6 @@ trait HttpClientEnvironment {
 				Future.failed(e)
 		}
 	}
+
+	def stopHttpClient = system.shutdown
 }

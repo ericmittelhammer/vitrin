@@ -22,9 +22,9 @@ trait Logging {
 		def append(f1: Log, f2: => Log) = f1 ::: f2
 	}
 
-	val logger: Logger
+	protected val logger: Logger
 
-	def runLog(log: Log): Unit =
+	protected def runLog(log: Log): Unit =
 		log.foreach {
 			case Trace(msg) => logger.trace(msg)
 			case Debug(msg) => logger.debug(msg)

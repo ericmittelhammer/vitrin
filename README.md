@@ -7,23 +7,30 @@ To create a new server, extend the ```vitrin.http.Server``` trait like this:
 ```scala
 import vitrin.http.Server
 import vitrin.http.routes._
-import vitrin.runtime.logging.DefaultLogging
 import vitrin.Failure
+import vitrin.runtime.DefaultEnvironment
+import vitrin.runtime.RedisEnvironment
+import akka.util.ByteString
 import akka.http.model._
 import HttpMethods._
-import redis.RedisClient
 import scala.concurrent.Future
 
-object example1 extends Server with ExampleRuntime {
+object example1 extends Server {
 	/**
 	  * Name your server.
 	  */
 	val name = "example1"
 
 	/**
+	  * Specify the runtime and import it.
+	  */
+	val runtime = new ExampleRuntime(name, new DefaultEnvironment with RedisEnvironment)
+	import runtime._
+
+	/**
 	  * Specify a default execution context for the server.
 	  */
-	implicit val executionContext = Dispatchers.service
+	implicit val executionContext = system.dispatchers.lookup("service")
 
 	/**
 	  * The router is a partial function from http requests to processes of http responses.
@@ -77,31 +84,25 @@ object example1 extends Server with ExampleRuntime {
 
 }
 ```
-The above ```example1``` server has a ```Runtime``` implementation mixed in, that extends the ```DefaultRuntime``` provided by the library. A runtime is where all methods, that interact with the environment in a side effecting fashion(except for logging), can be defined. The following example adds a new method to the default runtime, that can read from and write to Redis:
+The above ```example1``` server has a member of type ```Runtime```, that is set to a ```ExampleRuntime``` instance, a class extending ```DefaultRuntime```, provided by the library. A runtime is where all methods, that interact with the environment in a side effecting fashion, can be defined. The following example adds a new method to the default runtime, that can read from and write to Redis:
 ```scala
 import vitrin.runtime.DefaultRuntime
 import vitrin.runtime.DefaultEnvironment
 import vitrin.runtime.logging.DefaultLogging
-import vitrin.ReadWrite
-import vitrin.Success
 import vitrin.Failure
 import vitrin.Error
 import redis.RedisCommands
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 
-trait ExampleRuntime extends DefaultRuntime with DefaultLogging {
-	/**
-	  * Set the exact type of the environment. DefaultEnvironment is provided by the library,
-	  * and contains the config.
-	  */
-	type Env = DefaultEnvironment with RedisEnvironment
+class ExampleRuntime[Env <: DefaultEnvironment with RedisEnvironment](val name: String, val environment: Env)
+	extends DefaultRuntime[Env]
+	with DefaultLogging {
 
-	/**
-	  * Instantiate the environment.
-	  */
-	val environment = new DefaultEnvironment with RedisEnvironment
-
+	def stop = {
+		environment.stopRedis
+	}
+	
 	/**
 	  * This helper method takes a command against a Redis connection, executes it, and lifts
 	  * the result to a process of the return type, so that it can be flatmapped onto other
@@ -125,20 +126,12 @@ trait RedisEnvironment {
 	private val systemConfig = TypesafeConfig.akkaConfig("redis-system")
 	private implicit val system = ActorSystem("redis-system", systemConfig)
 	val redis = RedisClient()
+	
+	def stopRedis = system.shutdown
 }
 ```
 This example uses the [rediscala](https://github.com/etaty/rediscala) driver. In reality, such a Redis runtime and environment is provided by the library (see examples [here](https://github.com/privateblue/vitrin-example)), and the code above is just to demonstrate how the default runtime and environment can be extended in a client application.
 
-The ```example1``` server above used an object that contained all configured execution contexts:
-```scala
-import vitrin.runtime.config.TypesafeConfig
-import akka.actor.ActorSystem
-
-object Dispatchers {
-	private val system = ActorSystem("dispatchers", TypesafeConfig.akkaLoggingOff)
-	val service = system.dispatchers.lookup("service")
-}
-```
 The ```service``` execution context is configured in the configuration file, that also contains the previously used ```foo.bar``` value. It is possible to configure here the default execution context of every actor system, that is used by the application, like the server's, that listens to requests and responds to them, or the one used by rediscala:
 ```
 example1-server-system {
